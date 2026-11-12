@@ -30,6 +30,73 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+    <!-- MÀN HÌNH KHÓA BẢO VỆ XÁC THỰC QUẢN TRỊ VIÊN (GATED AUTH SCREEN) -->
+    <div id="auth-gate-screen" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[999999] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 text-slate-800 transition-all">
+            <!-- Header Card -->
+            <div class="bg-gradient-to-r from-indigo-700 via-indigo-800 to-slate-900 text-white p-6 text-center relative">
+                <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner border border-white/20">
+                    <i data-lucide="shield-check" class="w-8 h-8 text-amber-300"></i>
+                </div>
+                <h2 class="text-lg font-bold">Khu Vực Quản Trị Viên</h2>
+                <p class="text-xs text-indigo-200 mt-1">Hệ Thống Dữ Liệu Khách Hàng Maps - In Lạc Hồng</p>
+            </div>
+
+            <!-- View 1: Form Đăng Nhập Quản Trị Viên (Dành cho truy cập trực tiếp / link public) -->
+            <div id="gate-login-view" class="p-6">
+                <div class="mb-5 bg-amber-50 border border-amber-200/80 rounded-xl p-3.5 flex items-start gap-2.5">
+                    <i data-lucide="lock" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                    <p class="text-xs text-amber-900 leading-relaxed">
+                        Link module GGMDATA đã được <b>bảo mật nội bộ</b>. Vui lòng xác thực tài khoản <b>Quản trị viên (ADMIN)</b> để tiếp tục.
+                    </p>
+                </div>
+
+                <form id="gate-login-form" onsubmit="handleGateLogin(event)" class="space-y-4 text-xs">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Tài khoản Quản trị viên</label>
+                        <input type="text" id="gate-username" required placeholder="Nhập username Admin (VD: admin, huyhq)" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Mật khẩu</label>
+                        <input type="password" id="gate-password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
+                    </div>
+                    <div id="gate-error-msg" class="hidden text-xs text-rose-600 bg-rose-50 border border-rose-200 p-2.5 rounded-lg font-medium"></div>
+
+                    <button type="submit" id="btn-gate-login" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow-md transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="log-in" class="w-4 h-4"></i> Xác thực & Mở khóa
+                    </button>
+                </form>
+
+                <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <a href="/" class="hover:text-indigo-600 inline-flex items-center gap-1 font-medium transition">
+                        ← Về CRM In Lạc Hồng
+                    </a>
+                    <span class="text-[11px] text-slate-400">In Lạc Hồng Security</span>
+                </div>
+            </div>
+
+            <!-- View 2: Từ Chối Quyền Truy Cập (Khi tài khoản đăng nhập là nhân viên thường) -->
+            <div id="gate-denied-view" class="p-6 text-center hidden">
+                <div class="w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl font-bold">🚫</div>
+                <h3 class="text-base font-bold text-slate-900 mb-1">Từ Chối Quyền Truy Cập</h3>
+                <p id="gate-denied-desc" class="text-xs text-slate-500 leading-relaxed mb-5">
+                    Tài khoản của bạn không có quyền Quản trị viên (ADMIN) để sử dụng module GGMDATA.
+                </p>
+                <div class="flex flex-col gap-2">
+                    <button onclick="logoutGateUser()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition">
+                        Đăng nhập bằng tài khoản khác
+                    </button>
+                    <a href="/" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs transition block text-center">
+                        Quay lại CRM In Lạc Hồng
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTENT (ẨN MẶC ĐỊNH CHO ĐẾN KHI XÁC THỰC ADMIN THÀNH CÔNG) -->
+    <div id="app-root" style="display: none !important;">
+
     <!-- Header -->
     <header class="bg-indigo-700 text-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
@@ -731,8 +798,29 @@
 
     <!-- Container chính thức cho V9 Tech Voice SDK Dialer UI -->
     <div id="sip-dialer-container"></div>
+    </div><!-- end #app-root -->
 
     <script>
+        // AUTH STATE & FETCH INTERCEPTOR
+        window._authToken = '';
+        window._currentUser = null;
+
+        const _origFetch = window.fetch;
+        window.fetch = function(url, options) {
+            options = options || {};
+            options.headers = options.headers || {};
+            if (window._authToken) {
+                if (options.headers instanceof Headers) {
+                    options.headers.set('X-Admin-Token', window._authToken);
+                } else if (Array.isArray(options.headers)) {
+                    options.headers.push(['X-Admin-Token', window._authToken]);
+                } else {
+                    options.headers['X-Admin-Token'] = window._authToken;
+                }
+            }
+            return _origFetch(url, options);
+        };
+
 
         const BASE_PATH = window.location.pathname.startsWith('/ggmdata') ? '/ggmdata' : '';
         function apiUrl(endpoint) { return BASE_PATH + endpoint; }
@@ -2026,41 +2114,142 @@
             }
         }
 
-        function checkAdminAccess() {
+                function getCRMUser() {
+            let rawUser = null;
             try {
                 if (window.parent && window.parent !== window) {
-                    const rawUser = window.parent.localStorage.getItem('ihp_current_user');
-                    if (rawUser) {
-                        const user = JSON.parse(rawUser);
-                        const isAdm = user && (user.role === 'ADMIN' || user.role === 'admin' || user.is_admin || user.isAdmin);
-                        if (!isAdm) {
-                            document.body.innerHTML = `
-                                <div class="flex flex-col items-center justify-center min-h-screen bg-slate-100 p-6 font-sans text-slate-800">
-                                    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-slate-200">
-                                        <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">🔒</div>
-                                        <h2 class="text-xl font-bold text-slate-900 mb-2">Giới hạn quyền truy cập</h2>
-                                        <p class="text-xs text-slate-500 leading-relaxed mb-6">
-                                            Module <b>GGMDATA (Quét Data Google Maps & Kho CSDL)</b> chỉ dành riêng cho tài khoản <b>Quản trị viên (ADMIN)</b>. Bạn không có quyền truy cập module này.
-                                        </p>
-                                        <button onclick="window.parent.goBackToHub ? window.parent.goBackToHub('ggmdata') : window.parent.location.reload()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow-sm transition">
-                                            Quay lại màn hình chính
-                                        </button>
-                                    </div>
-                                </div>
-                            `;
-                            return false;
-                        }
-                    }
+                    rawUser = window.parent.sessionStorage.getItem('ihp_current_user') || window.parent.localStorage.getItem('ihp_current_user');
                 }
-            } catch (e) {
-                console.warn('Lỗi kiểm tra quyền cha:', e);
+            } catch (e) {}
+            if (!rawUser) {
+                try {
+                    rawUser = window.sessionStorage.getItem('ihp_current_user') || window.localStorage.getItem('ihp_current_user');
+                } catch (e) {}
             }
-            return true;
+            if (!rawUser) return null;
+            try {
+                return JSON.parse(rawUser);
+            } catch (e) {
+                return null;
+            }
         }
+
+        async function verifyAndUnlockAdmin() {
+            const user = getCRMUser();
+            const gateScreen = document.getElementById('auth-gate-screen');
+            const appRoot = document.getElementById('app-root');
+            const loginView = document.getElementById('gate-login-view');
+            const deniedView = document.getElementById('gate-denied-view');
+            const deniedDesc = document.getElementById('gate-denied-desc');
+
+            if (user) {
+                const isAdm = Boolean(user.role === 'ADMIN' || user.role === 'admin' || user.is_admin || user.isAdmin);
+                if (!isAdm) {
+                    loginView.classList.add('hidden');
+                    deniedView.classList.remove('hidden');
+                    if (deniedDesc) {
+                        deniedDesc.innerHTML = `Tài khoản <b>${escapeHtml(user.fullname || user.username || 'Nhân viên')}</b> (Vai trò: <b>${escapeHtml(user.role || 'STAFF')}</b>) không có quyền Quản trị viên (ADMIN) để truy cập module GGMDATA.`;
+                    }
+                    if (window.lucide) lucide.createIcons();
+                    return false;
+                }
+
+                // User is Admin -> sync session with backend
+                try {
+                    const res = await fetch(apiUrl('/api/auth/session-sync'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: user.username })
+                    });
+                    const data = await res.json();
+                    if (data.success && data.token) {
+                        window._authToken = data.token;
+                        window._currentUser = data.user;
+                        gateScreen.style.setProperty('display', 'none', 'important');
+                        appRoot.style.removeProperty('display');
+                        appRoot.style.display = 'block';
+                        return true;
+                    }
+                } catch (err) {
+                    console.warn('Lỗi đồng bộ session admin với backend:', err);
+                }
+            }
+
+            // If not authenticated, ensure gate screen is visible with login form
+            loginView.classList.remove('hidden');
+            deniedView.classList.add('hidden');
+            if (window.lucide) lucide.createIcons();
+            return false;
+        }
+
+        async function handleGateLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('gate-username').value.trim();
+            const p = document.getElementById('gate-password').value.trim();
+            const errEl = document.getElementById('gate-error-msg');
+            const btn = document.getElementById('btn-gate-login');
+            
+            errEl.classList.add('hidden');
+            errEl.textContent = '';
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Đang xác thực...';
+
+            try {
+                const res = await fetch(apiUrl('/api/auth/login'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                if (data.success && data.token) {
+                    window._authToken = data.token;
+                    window._currentUser = data.user;
+                    try {
+                        localStorage.setItem('ihp_current_user', JSON.stringify(data.user));
+                        sessionStorage.setItem('ihp_current_user', JSON.stringify(data.user));
+                    } catch(e) {}
+                    
+                    document.getElementById('auth-gate-screen').style.setProperty('display', 'none', 'important');
+                    const appRoot = document.getElementById('app-root');
+                    appRoot.style.removeProperty('display');
+                    appRoot.style.display = 'block';
+
+                    initPickerMap();
+                    initV9Integration();
+                    loadDatabaseStats();
+                    loadDatabasePlaces(1);
+                    if (window.lucide) lucide.createIcons();
+                } else {
+                    errEl.textContent = data.error || 'Sai tên đăng nhập hoặc mật khẩu!';
+                    errEl.classList.remove('hidden');
+                }
+            } catch(err) {
+                errEl.textContent = 'Lỗi kết nối máy chủ: ' + err.message;
+                errEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i> Xác thực & Mở khóa';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        function logoutGateUser() {
+            try {
+                localStorage.removeItem('ihp_current_user');
+                sessionStorage.removeItem('ihp_current_user');
+                if (window.parent && window.parent !== window) {
+                    window.parent.localStorage.removeItem('ihp_current_user');
+                    window.parent.sessionStorage.removeItem('ihp_current_user');
+                }
+            } catch(e) {}
+            window.location.reload();
+        }
+
 
         function exportDatabaseFile(format) {
             const filter = document.getElementById('db-filter-select').value;
-            window.location.href = apiUrl(`/api/database/export?filter=${encodeURIComponent(filter)}&format=${format}`);
+            const token = window._authToken || '';
+            window.location.href = apiUrl(`/api/database/export?filter=${encodeURIComponent(filter)}&format=${format}&token=${encodeURIComponent(token)}`);
         }
 
         function escapeHtml(str) {
@@ -2070,11 +2259,15 @@
             return div.innerHTML;
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            if (!checkAdminAccess()) return;
-            initPickerMap();
-            initV9Integration();
-            lucide.createIcons();
+        window.addEventListener('DOMContentLoaded', async () => {
+            const unlocked = await verifyAndUnlockAdmin();
+            if (unlocked) {
+                initPickerMap();
+                initV9Integration();
+                loadDatabaseStats();
+                loadDatabasePlaces(1);
+            }
+            if (window.lucide) lucide.createIcons();
         });
     
 </script>

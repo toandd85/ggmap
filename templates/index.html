@@ -12,7 +12,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- V9 Tech Softphone SDK (WebRTC SIP Dialer) -->
-    <script src="/static/v9_softphone_sdk.js"></script>
+    <script src="static/v9_softphone_sdk.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
         #picker-map, #results-map { height: 460px; border-radius: 0.75rem; }
@@ -1722,7 +1722,7 @@
                         contactHtml.push(`<div class="flex items-center gap-1 text-sky-700 font-medium truncate max-w-[170px]" title="${escapeHtml(p.emails)}">✉ ${escapeHtml(p.emails)}</div>`);
                     }
                     if (p.website) {
-                        contactHtml.push(`<a href="${escapeHtml(p.website)}" target="_blank" class="text-indigo-600 hover:underline truncate max-w-[170px] block" title="${escapeHtml(p.website)}">🌐 ${escapeHtml(p.website.replace(/^https?:\\/\\//, ''))}</a>`);
+                        contactHtml.push(`<a href="${escapeHtml(p.website)}" target="_blank" class="text-indigo-600 hover:underline truncate max-w-[170px] block" title="${escapeHtml(p.website)}">🌐 ${escapeHtml(p.website.replace(/^https?:\/\//, ''))}</a>`);
                     }
                     if (contactHtml.length === 0) contactHtml.push('<span class="text-slate-300 italic">Chưa có liên hệ</span>');
 

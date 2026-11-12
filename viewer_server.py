@@ -491,6 +491,39 @@ def sync_all_database_files():
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
+@app.get("/api/database/places/{place_id}")
+def get_database_place(place_id: int):
+    """Lấy chi tiết một địa điểm để hiển thị modal chỉnh sửa"""
+    try:
+        place = db_manager.get_place_by_id(place_id)
+        if not place:
+            return JSONResponse(status_code=404, content={"success": False, "error": "Không tìm thấy địa điểm"})
+        return {"success": True, "place": place}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.post("/api/database/places")
+def create_database_place(data: dict):
+    """Thêm một địa điểm / khách hàng mới vào CSDL Master"""
+    try:
+        res = db_manager.add_place(data)
+        if not res.get("success"):
+            return JSONResponse(status_code=400, content=res)
+        return res
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.put("/api/database/places/{place_id}")
+def update_database_place(place_id: int, data: dict):
+    """Cập nhật thông tin địa điểm / khách hàng trong CSDL Master"""
+    try:
+        res = db_manager.update_place(place_id, data)
+        if not res.get("success"):
+            return JSONResponse(status_code=400, content=res)
+        return res
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
 @app.delete("/api/database/places/{place_id}")
 def delete_database_place(place_id: int):
     """Xóa một địa điểm khỏi kho CSDL"""

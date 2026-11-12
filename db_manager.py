@@ -405,6 +405,119 @@ def get_places(
         "places": places
     }
 
+def get_place_by_id(place_id: int, db_file: Optional[Path] = None) -> Optional[Dict[str, Any]]:
+    init_db(db_file)
+    conn = get_connection(db_file)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM places WHERE id = ?", (place_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return None
+    d = dict(row)
+    d["phone_info"] = clean_phone(d.get("phone", ""))
+    return d
+
+def add_place(data: Dict[str, Any], db_file: Optional[Path] = None) -> Dict[str, Any]:
+    init_db(db_file)
+    conn = get_connection(db_file)
+    cursor = conn.cursor()
+
+    title = str(data.get("title", "")).strip()
+    if not title:
+        conn.close()
+        return {"success": False, "error": "Vui lòng nhập tên địa điểm / doanh nghiệp"}
+
+    raw_phone = str(data.get("phone", "")).strip()
+    phone_info = clean_phone(raw_phone)
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    place_id = str(data.get("place_id", "")).strip() or f"manual_{int(datetime.datetime.now().timestamp() * 1000)}"
+
+    try:
+        cursor.execute("""
+            INSERT INTO places (
+                place_id, title, category, phone, phone_clean, is_mobile, zalo_link,
+                address, complete_address, website, emails, review_count, review_rating,
+                link, scan_count, first_scanned_at, last_scanned_at, last_keyword
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, 'Thêm thủ công')
+        """, (
+            place_id, title,
+            str(data.get("category", "")).strip(),
+            raw_phone, phone_info["clean"],
+            1 if phone_info["is_mobile"] else 0,
+            phone_info["zalo_url"],
+            str(data.get("address", "")).strip(),
+            str(data.get("complete_address", "")).strip() or str(data.get("address", "")).strip(),
+            str(data.get("website", "")).strip(),
+            str(data.get("emails", "")).strip(),
+            int(data.get("review_count", 0) or 0),
+            float(data.get("review_rating", 0) or 0.0),
+            str(data.get("link", "")).strip(),
+            now_str, now_str
+        ))
+        new_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return {"success": True, "id": new_id}
+    except Exception as e:
+        conn.close()
+        return {"success": False, "error": str(e)}
+
+def update_place(place_id: int, data: Dict[str, Any], db_file: Optional[Path] = None) -> Dict[str, Any]:
+    init_db(db_file)
+    conn = get_connection(db_file)
+    cursor = conn.cursor()
+
+    title = str(data.get("title", "")).strip()
+    if not title:
+        conn.close()
+        return {"success": False, "error": "Vui lòng nhập tên địa điểm / doanh nghiệp"}
+
+    raw_phone = str(data.get("phone", "")).strip()
+    phone_info = clean_phone(raw_phone)
+    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    try:
+        cursor.execute("""
+            UPDATE places SET 
+                title = ?,
+                category = ?,
+                phone = ?,
+                phone_clean = ?,
+                is_mobile = ?,
+                zalo_link = ?,
+                address = ?,
+                complete_address = ?,
+                website = ?,
+                emails = ?,
+                review_count = ?,
+                review_rating = ?,
+                link = ?,
+                last_scanned_at = ?
+            WHERE id = ?
+        """, (
+            title,
+            str(data.get("category", "")).strip(),
+            raw_phone, phone_info["clean"],
+            1 if phone_info["is_mobile"] else 0,
+            phone_info["zalo_url"],
+            str(data.get("address", "")).strip(),
+            str(data.get("complete_address", "")).strip() or str(data.get("address", "")).strip(),
+            str(data.get("website", "")).strip(),
+            str(data.get("emails", "")).strip(),
+            int(data.get("review_count", 0) or 0),
+            float(data.get("review_rating", 0) or 0.0),
+            str(data.get("link", "")).strip(),
+            now_str,
+            place_id
+        ))
+        conn.commit()
+        conn.close()
+        return {"success": True}
+    except Exception as e:
+        conn.close()
+        return {"success": False, "error": str(e)}
+
 def delete_place(place_id: int, db_file: Optional[Path] = None) -> bool:
     init_db(db_file)
     conn = get_connection(db_file)

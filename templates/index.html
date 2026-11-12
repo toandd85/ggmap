@@ -455,6 +455,9 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <button onclick="openAddPlaceModal()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+                        <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-amber-300"></i> + Thêm địa điểm
+                    </button>
                     <button onclick="syncAllScrapesToDB()" id="btn-sync-all" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm" title="Quét toàn bộ file trong thư mục outputs và nạp vào CSDL">
                         <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Đồng bộ file cũ vào CSDL
                     </button>
@@ -493,7 +496,7 @@
                                 <th class="p-3 min-w-[140px]">Ngành nghề</th>
                                 <th class="p-3 min-w-[200px]">Địa chỉ</th>
                                 <th class="p-3 min-w-[130px] text-center">Lần quét & Cập nhật</th>
-                                <th class="p-3 w-16 text-center">Thao tác</th>
+                                <th class="p-3 min-w-[140px] text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="db-table-body" class="divide-y divide-slate-100 text-slate-700">
@@ -637,6 +640,78 @@
                     <i data-lucide="check" class="w-4 h-4"></i> Lưu & Kết nối
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL THÊM / SỬA ĐỊA ĐIỂM CSDL MASTER -->
+    <div id="place-modal" class="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 hidden" style="z-index: 99999;">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+            <div class="bg-indigo-700 text-white p-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="building-2" class="w-5 h-5 text-amber-300"></i>
+                    <h3 id="place-modal-title" class="font-bold text-sm">Thêm địa điểm khách hàng mới</h3>
+                </div>
+                <button type="button" onclick="closePlaceModal()" class="text-indigo-200 hover:text-white p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="place-form" onsubmit="savePlaceForm(event)" class="p-5 flex flex-col gap-3.5 text-xs">
+                <input type="hidden" id="modal-place-id">
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Tên địa điểm / Doanh nghiệp <span class="text-rose-500">*</span></label>
+                    <input type="text" id="modal-place-title" required placeholder="VD: Công ty TNHH Bao Bì Hùng Phát" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Số điện thoại</label>
+                        <input type="text" id="modal-place-phone" placeholder="VD: 0988123456" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Ngành nghề / Danh mục</label>
+                        <input type="text" id="modal-place-category" placeholder="VD: Cửa hàng quà tặng, In ấn" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Email</label>
+                        <input type="email" id="modal-place-emails" placeholder="contact@congty.com" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Website</label>
+                        <input type="text" id="modal-place-website" placeholder="https://congty.com" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Địa chỉ chi tiết</label>
+                    <input type="text" id="modal-place-address" placeholder="VD: 157 Xuân Thủy, Cầu Giấy, Hà Nội" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Điểm sao (0-5)</label>
+                        <input type="number" step="0.1" min="0" max="5" id="modal-place-rating" placeholder="5.0" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Số review</label>
+                        <input type="number" min="0" id="modal-place-reviews" placeholder="10" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Link Google Maps</label>
+                        <input type="text" id="modal-place-link" placeholder="https://maps.google.com/..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-xs">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 mt-2">
+                    <button type="button" onclick="closePlaceModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition">Hủy bỏ</button>
+                    <button type="submit" id="btn-save-place" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm flex items-center gap-1.5 transition">
+                        <i data-lucide="check" class="w-4 h-4"></i> Lưu thông tin
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1759,9 +1834,14 @@
                                 <div class="text-[10px] text-slate-400 mt-1">${escapeHtml(p.last_scanned_at || '')}</div>
                             </td>
                             <td class="p-3 text-center">
-                                <button onclick="deletePlaceFromDb(${p.id}, '${escapeHtml(p.title).replace(/'/g, "\\'")}')" class="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50 transition" title="Xóa địa điểm khỏi CSDL">
-                                    🗑
-                                </button>
+                                <div class="flex items-center justify-center gap-1.5">
+                                    <button onclick="openEditPlaceModal(${p.id})" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/70 rounded-md text-xs font-semibold inline-flex items-center gap-1 transition shadow-xs" title="Sửa thông tin địa điểm">
+                                        ✏️ Sửa
+                                    </button>
+                                    <button onclick="deletePlaceFromDb(${p.id}, '${escapeHtml(p.title).replace(/'/g, "\'")}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/70 rounded-md text-xs font-semibold inline-flex items-center gap-1 transition shadow-xs" title="Xóa địa điểm">
+                                        🗑️ Xóa
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `;
@@ -1856,6 +1936,128 @@
             }
         }
 
+
+        function openAddPlaceModal() {
+            document.getElementById('place-form').reset();
+            document.getElementById('modal-place-id').value = '';
+            document.getElementById('place-modal-title').textContent = 'Thêm địa điểm khách hàng mới';
+            document.getElementById('place-modal').classList.remove('hidden');
+        }
+
+        async function openEditPlaceModal(id) {
+            try {
+                const res = await fetch(apiUrl(`/api/database/places/${id}`));
+                const data = await res.json();
+                if (!data.success || !data.place) {
+                    alert('Không tìm thấy thông tin địa điểm: ' + (data.error || ''));
+                    return;
+                }
+                const p = data.place;
+                document.getElementById('modal-place-id').value = p.id;
+                document.getElementById('modal-place-title').value = p.title || '';
+                document.getElementById('modal-place-phone').value = p.phone || p.phone_clean || '';
+                document.getElementById('modal-place-category').value = p.category || '';
+                document.getElementById('modal-place-emails').value = p.emails || '';
+                document.getElementById('modal-place-website').value = p.website || '';
+                document.getElementById('modal-place-address').value = p.address || '';
+                document.getElementById('modal-place-rating').value = p.review_rating || '';
+                document.getElementById('modal-place-reviews').value = p.review_count || '';
+                document.getElementById('modal-place-link').value = p.link || '';
+
+                document.getElementById('place-modal-title').textContent = `Chỉnh sửa: ${p.title}`;
+                document.getElementById('place-modal').classList.remove('hidden');
+            } catch (e) {
+                alert('Lỗi tải dữ liệu địa điểm: ' + e.message);
+            }
+        }
+
+        function closePlaceModal() {
+            document.getElementById('place-modal').classList.add('hidden');
+        }
+
+        async function savePlaceForm(e) {
+            e.preventDefault();
+            const id = document.getElementById('modal-place-id').value;
+            const payload = {
+                title: document.getElementById('modal-place-title').value.trim(),
+                phone: document.getElementById('modal-place-phone').value.trim(),
+                category: document.getElementById('modal-place-category').value.trim(),
+                emails: document.getElementById('modal-place-emails').value.trim(),
+                website: document.getElementById('modal-place-website').value.trim(),
+                address: document.getElementById('modal-place-address').value.trim(),
+                review_rating: parseFloat(document.getElementById('modal-place-rating').value) || 0,
+                review_count: parseInt(document.getElementById('modal-place-reviews').value) || 0,
+                link: document.getElementById('modal-place-link').value.trim()
+            };
+
+            const btn = document.getElementById('btn-save-place');
+            const origText = btn.innerHTML;
+            btn.innerHTML = '⏳ Đang lưu...';
+            btn.disabled = true;
+
+            try {
+                let res;
+                if (id) {
+                    res = await fetch(apiUrl(`/api/database/places/${id}`), {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                } else {
+                    res = await fetch(apiUrl('/api/database/places'), {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                }
+                const data = await res.json();
+                if (data.success) {
+                    closePlaceModal();
+                    loadDatabaseStats();
+                    loadDatabasePlaces(dbCurrentPage);
+                } else {
+                    alert('Lỗi lưu dữ liệu: ' + (data.error || ''));
+                }
+            } catch (err) {
+                alert('Lỗi kết nối máy chủ: ' + err.message);
+            } finally {
+                btn.innerHTML = origText;
+                btn.disabled = false;
+            }
+        }
+
+        function checkAdminAccess() {
+            try {
+                if (window.parent && window.parent !== window) {
+                    const rawUser = window.parent.localStorage.getItem('ihp_current_user');
+                    if (rawUser) {
+                        const user = JSON.parse(rawUser);
+                        const isAdm = user && (user.role === 'ADMIN' || user.role === 'admin' || user.is_admin || user.isAdmin);
+                        if (!isAdm) {
+                            document.body.innerHTML = `
+                                <div class="flex flex-col items-center justify-center min-h-screen bg-slate-100 p-6 font-sans text-slate-800">
+                                    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-slate-200">
+                                        <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">🔒</div>
+                                        <h2 class="text-xl font-bold text-slate-900 mb-2">Giới hạn quyền truy cập</h2>
+                                        <p class="text-xs text-slate-500 leading-relaxed mb-6">
+                                            Module <b>GGMDATA (Quét Data Google Maps & Kho CSDL)</b> chỉ dành riêng cho tài khoản <b>Quản trị viên (ADMIN)</b>. Bạn không có quyền truy cập module này.
+                                        </p>
+                                        <button onclick="window.parent.goBackToHub ? window.parent.goBackToHub('ggmdata') : window.parent.location.reload()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow-sm transition">
+                                            Quay lại màn hình chính
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                            return false;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Lỗi kiểm tra quyền cha:', e);
+            }
+            return true;
+        }
+
         function exportDatabaseFile(format) {
             const filter = document.getElementById('db-filter-select').value;
             window.location.href = apiUrl(`/api/database/export?filter=${encodeURIComponent(filter)}&format=${format}`);
@@ -1869,6 +2071,7 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            if (!checkAdminAccess()) return;
             initPickerMap();
             initV9Integration();
             lucide.createIcons();

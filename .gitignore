@@ -13,3 +13,7 @@ outputs/
 v9tech_config.json
 __pycache__/
 *.log
+*.db
+*.db-wal
+*.db-shm
+leads.db

@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import httpx
+import db_manager
 
 app = FastAPI(title="Google Maps Scraper - Viet UI Pro", root_path="/ggmdata" if os.environ.get("USE_ROOT_PATH") == "1" else "")
 
@@ -153,6 +154,16 @@ def run_scraper_thread(cmd: list, raw_csv_path: Path):
             current_scrape_job["status"] = "completed"
             current_scrape_job["logs"].append(">>> Cào dữ liệu hoàn tất thành công!")
             fix_and_save_files(raw_csv_path)
+            try:
+                kw = current_scrape_job.get("query_keywords", "")
+                db_res = db_manager.import_csv_to_db(raw_csv_path, keyword=kw, filename=raw_csv_path.name)
+                if db_res.get("success"):
+                    current_scrape_job["logs"].append(
+                        f">>> CSDL: Đã lưu vào CSDL & Lọc trùng thành công! Tổng: {db_res['total']} địa điểm "
+                        f"(Mới: {db_res['new']}, Trùng lặp đã gộp & cập nhật: {db_res['duplicates']})"
+                    )
+            except Exception as dbe:
+                current_scrape_job["logs"].append(f">>> CSDL: Cảnh báo lưu CSDL: {str(dbe)}")
         else:
             current_scrape_job["status"] = "error"
             current_scrape_job["logs"].append(f">>> Tiến trình kết thúc với mã lỗi: {process.returncode}")
@@ -338,6 +349,7 @@ def start_scrape(data: dict):
     current_scrape_job["is_running"] = True
     current_scrape_job["status"] = "running"
     current_scrape_job["output_file"] = output_filename
+    current_scrape_job["query_keywords"] = ", ".join(query_lines[:3])
     current_scrape_job["logs"] = []
 
     threading.Thread(target=run_scraper_thread, args=(cmd, raw_csv_path), daemon=True).start()
@@ -417,6 +429,76 @@ def download_file(filename: str = Query(...), format: str = Query("excel")):
     bom_csv = p.with_name(f"{p.stem}_excel.csv")
     target = bom_csv if bom_csv.exists() else p
     return FileResponse(target, filename=f"{p.stem}_utf8_bom.csv", media_type="text/csv")
+
+# ================= KHO CSDL & LỌC TRÙNG LẶP =================
+@app.get("/api/database/stats")
+def get_database_stats():
+    """Lấy thống kê tổng kho CSDL, lọc trùng và phân loại số điện thoại"""
+    try:
+        stats = db_manager.get_db_stats()
+        return {"success": True, "stats": stats}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.get("/api/database/places")
+def get_database_places(
+    q: str = Query("", description="Từ khóa tìm kiếm"),
+    filter_type: str = Query("all", alias="filter", description="all, mobile, email, website, duplicates"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=200),
+    sort_by: str = Query("last_scanned_at"),
+    sort_dir: str = Query("DESC")
+):
+    """Lấy danh sách địa điểm trong kho CSDL có phân trang và lọc trùng"""
+    try:
+        res = db_manager.get_places(
+            q=q,
+            filter_type=filter_type,
+            page=page,
+            page_size=page_size,
+            sort_by=sort_by,
+            sort_dir=sort_dir
+        )
+        return {"success": True, **res}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.get("/api/database/export")
+def export_database(
+    filter_type: str = Query("all", alias="filter"),
+    format: str = Query("excel")
+):
+    """Xuất file Excel hoặc CSV kho dữ liệu sạch không trùng lặp"""
+    try:
+        out_file = db_manager.export_places_to_file(filter_type=filter_type, export_format=format)
+        if not out_file.exists():
+            return JSONResponse(status_code=500, content={"error": "Không tạo được file xuất"})
+        
+        media_type = (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            if format == "excel" else "text/csv"
+        )
+        return FileResponse(out_file, filename=out_file.name, media_type=media_type)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/api/database/sync-all")
+def sync_all_database_files():
+    """Đồng bộ toàn bộ các file CSV đã cào vào CSDL và tự động loại bỏ / gộp trùng lặp"""
+    try:
+        res = db_manager.sync_all_outputs(RESULTS_DIR)
+        return res
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+
+@app.delete("/api/database/places/{place_id}")
+def delete_database_place(place_id: int):
+    """Xóa một địa điểm khỏi kho CSDL"""
+    try:
+        db_manager.delete_place(place_id)
+        return {"success": True}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
 # Giao diện HTML Tiếng Việt Chuyên Nghiệp
 @app.get("/", response_class=HTMLResponse)

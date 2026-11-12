@@ -57,6 +57,9 @@
                 <button onclick="switchTab('tab-view')" id="btn-tab-view" class="px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5">
                     <i data-lucide="table" class="w-4 h-4"></i> Xem dữ liệu & Gọi
                 </button>
+                <button onclick="switchTab('tab-database')" id="btn-tab-database" class="px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 shadow" title="Kho CSDL dữ liệu sạch & Lọc trùng">
+                    <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i> Kho CSDL & Lọc trùng
+                </button>
                 <button onclick="openV9Modal()" class="px-3 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow" title="Cài đặt tổng đài V9 Tech">
                     <i data-lucide="settings" class="w-4 h-4"></i> Cấu hình V9
                 </button>
@@ -350,6 +353,161 @@
             </div>
         </div>
 
+        <!-- TAB 3: KHO CSDL & LỌC TRÙNG LẶP MASTER -->
+        <div id="tab-database" class="hidden flex flex-col gap-6">
+            <!-- Thống kê tổng quan CSDL -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-slate-500">CSDL Duy nhất</span>
+                        <div class="p-1.5 bg-indigo-50 rounded-lg text-indigo-600">
+                            <i data-lucide="database" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <span id="db-stat-total" class="text-2xl font-black text-slate-800">0</span>
+                    <span class="text-[11px] text-slate-400 mt-1">Đã gộp trùng lặp</span>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-slate-500">Số Di động / Zalo</span>
+                        <div class="p-1.5 bg-emerald-50 rounded-lg text-emerald-600">
+                            <i data-lucide="phone" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <span id="db-stat-mobile" class="text-2xl font-black text-emerald-600">0</span>
+                    <span class="text-[11px] text-emerald-600/80 mt-1">Sẵn sàng gọi V9 & Zalo</span>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-slate-500">Có Email</span>
+                        <div class="p-1.5 bg-sky-50 rounded-lg text-sky-600">
+                            <i data-lucide="mail" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <span id="db-stat-email" class="text-2xl font-black text-sky-600">0</span>
+                    <span class="text-[11px] text-slate-400 mt-1">Email marketing</span>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-slate-500">Có Website</span>
+                        <div class="p-1.5 bg-amber-50 rounded-lg text-amber-600">
+                            <i data-lucide="globe" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <span id="db-stat-website" class="text-2xl font-black text-amber-600">0</span>
+                    <span class="text-[11px] text-slate-400 mt-1">Trang web công ty</span>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-slate-500">Trùng đã chặn</span>
+                        <div class="p-1.5 bg-purple-50 rounded-lg text-purple-600">
+                            <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <span id="db-stat-duplicates" class="text-2xl font-black text-purple-600">0</span>
+                    <span class="text-[11px] text-purple-600/80 mt-1">Lần phát hiện trùng</span>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-slate-500">Tổng đợt quét</span>
+                        <div class="p-1.5 bg-slate-50 rounded-lg text-slate-600">
+                            <i data-lucide="history" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                    <span id="db-stat-scans" class="text-2xl font-black text-slate-700">0</span>
+                    <span class="text-[11px] text-slate-400 mt-1">Lịch sử cào</span>
+                </div>
+            </div>
+
+            <!-- Thanh điều khiển: Tìm kiếm, Bộ lọc & Nút xuất -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[300px]">
+                    <div class="relative flex-1 min-w-[200px]">
+                        <input type="text" id="db-search-input" onkeyup="if(event.key==='Enter') doSearchDatabase()" placeholder="Tìm theo tên, SĐT, địa chỉ, ngành nghề..." class="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                    </div>
+
+                    <select id="db-filter-select" onchange="loadDatabasePlaces(1)" class="px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white font-medium text-slate-700">
+                        <option value="all">Tất cả dữ liệu Master</option>
+                        <option value="mobile">Chỉ số Di động / Zalo</option>
+                        <option value="email">Có Email</option>
+                        <option value="website">Có Website</option>
+                        <option value="duplicates">Đã quét nhiều lần (Gộp trùng)</option>
+                    </select>
+
+                    <button onclick="doSearchDatabase()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                        <i data-lucide="filter" class="w-3.5 h-3.5"></i> Lọc
+                    </button>
+                    <button onclick="resetSearchDatabase()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium flex items-center gap-1">
+                        Xóa lọc
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="syncAllScrapesToDB()" id="btn-sync-all" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm" title="Quét toàn bộ file trong thư mục outputs và nạp vào CSDL">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Đồng bộ file cũ vào CSDL
+                    </button>
+                    <button onclick="exportDatabaseFile('excel')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm" title="Xuất file Excel Master sạch không trùng lặp">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> Xuất Excel Master
+                    </button>
+                    <button onclick="exportDatabaseFile('csv')" class="px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm" title="Xuất file CSV chuẩn UTF-8 BOM">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Xuất CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bảng dữ liệu CSDL Master -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500">
+                    <span id="db-results-count">Đang tải dữ liệu CSDL...</span>
+                    <div class="flex items-center gap-2">
+                        <span>Hiển thị:</span>
+                        <select id="db-page-size" onchange="loadDatabasePlaces(1)" class="border border-slate-300 rounded px-2 py-0.5 bg-white text-xs">
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span>dòng/trang</span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-slate-100 text-slate-600 font-bold sticky top-0 z-10 border-b border-slate-200 shadow-sm">
+                            <tr>
+                                <th class="p-3 w-12 text-center">#</th>
+                                <th class="p-3 min-w-[220px]">Tên địa điểm / Doanh nghiệp</th>
+                                <th class="p-3 min-w-[170px]">Số điện thoại & Gọi V9</th>
+                                <th class="p-3 min-w-[180px]">Email & Website</th>
+                                <th class="p-3 min-w-[140px]">Ngành nghề</th>
+                                <th class="p-3 min-w-[200px]">Địa chỉ</th>
+                                <th class="p-3 min-w-[130px] text-center">Lần quét & Cập nhật</th>
+                                <th class="p-3 w-16 text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="db-table-body" class="divide-y divide-slate-100 text-slate-700">
+                            <tr>
+                                <td colspan="8" class="p-8 text-center text-slate-400">Đang nạp dữ liệu từ kho CSDL...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Phân trang -->
+                <div class="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+                    <div class="text-slate-500" id="db-pagination-info">Trang 1 / 1</div>
+                    <div class="flex items-center gap-1.5" id="db-pagination-controls">
+                        <!-- Buttons injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- FLOATING WEBRTC SOFTPHONE CALL WIDGET (Góc dưới bên phải) -->
@@ -548,21 +706,34 @@
         function switchTab(tabId) {
             document.getElementById('tab-scrape').classList.toggle('hidden', tabId !== 'tab-scrape');
             document.getElementById('tab-view').classList.toggle('hidden', tabId !== 'tab-view');
-            
+            const tabDb = document.getElementById('tab-database');
+            if (tabDb) tabDb.classList.toggle('hidden', tabId !== 'tab-database');
+
             document.getElementById('btn-tab-scrape').className = tabId === 'tab-scrape' 
                 ? 'px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-900 text-white shadow flex items-center gap-1.5'
                 : 'px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5';
-            
+
             document.getElementById('btn-tab-view').className = tabId === 'tab-view'
                 ? 'px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-900 text-white shadow flex items-center gap-1.5'
                 : 'px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5';
 
+            const btnDb = document.getElementById('btn-tab-database');
+            if (btnDb) {
+                btnDb.className = tabId === 'tab-database'
+                    ? 'px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-900 text-white shadow flex items-center gap-1.5'
+                    : 'px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5';
+            }
+
             if (tabId === 'tab-view') {
                 if (!resultsMap) initResultsMap();
                 refreshFileList();
+            } else if (tabId === 'tab-database') {
+                loadDatabaseStats();
+                loadDatabasePlaces(1);
             } else {
                 if (pickerMap) setTimeout(() => pickerMap.invalidateSize(), 200);
             }
+            if (window.lucide) lucide.createIcons();
         }
 
         function setScrapeMode(mode) {
@@ -1463,6 +1634,225 @@
             } catch (e) {
                 alert("Lỗi kết nối máy chủ: " + e.message);
             }
+        }
+
+        // ==================== KHO CSDL & LỌC TRÙNG LẶP MASTER ====================
+        let dbCurrentPage = 1;
+        let dbTotalPages = 1;
+
+        async function loadDatabaseStats() {
+            try {
+                const res = await fetch(apiUrl('/api/database/stats'));
+                const data = await res.json();
+                if (data.success && data.stats) {
+                    const s = data.stats;
+                    document.getElementById('db-stat-total').textContent = (s.total_places || 0).toLocaleString();
+                    document.getElementById('db-stat-mobile').textContent = (s.mobile_count || 0).toLocaleString();
+                    document.getElementById('db-stat-email').textContent = (s.email_count || 0).toLocaleString();
+                    document.getElementById('db-stat-website').textContent = (s.website_count || 0).toLocaleString();
+                    document.getElementById('db-stat-duplicates').textContent = (s.duplicates_prevented || 0).toLocaleString();
+                    document.getElementById('db-stat-scans').textContent = (s.total_scans || 0).toLocaleString();
+                }
+            } catch (e) {
+                console.error("Lỗi load database stats:", e);
+            }
+        }
+
+        async function loadDatabasePlaces(page = 1) {
+            dbCurrentPage = page;
+            const q = document.getElementById('db-search-input').value.trim();
+            const filter = document.getElementById('db-filter-select').value;
+            const pageSize = document.getElementById('db-page-size').value || 25;
+
+            const tbody = document.getElementById('db-table-body');
+            tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400"><i class="animate-spin inline-block mr-2">⏳</i> Đang tải danh sách dữ liệu...</td></tr>`;
+
+            try {
+                const url = apiUrl(`/api/database/places?q=${encodeURIComponent(q)}&filter=${encodeURIComponent(filter)}&page=${page}&page_size=${pageSize}`);
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (!data.success) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-rose-500">Lỗi tải dữ liệu: ${data.error || ''}</td></tr>`;
+                    return;
+                }
+
+                document.getElementById('db-results-count').innerHTML = `Tìm thấy <b class="text-indigo-600 font-bold">${data.total.toLocaleString()}</b> địa điểm`;
+                dbTotalPages = data.total_pages;
+
+                if (!data.places || data.places.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400">Không tìm thấy địa điểm nào phù hợp với bộ lọc</td></tr>`;
+                    renderDbPagination(0, 1);
+                    return;
+                }
+
+                let html = '';
+                const startIdx = (page - 1) * parseInt(pageSize);
+
+                data.places.forEach((p, idx) => {
+                    const cleanPhone = p.phone_clean || '';
+                    const isMobile = p.is_mobile === 1;
+                    const rawPhone = p.phone || cleanPhone;
+                    const zaloUrl = p.zalo_link || (isMobile ? `https://zalo.me/${cleanPhone}` : '');
+
+                    let phoneHtml = `<span class="text-slate-400 italic">Không có SĐT</span>`;
+                    if (cleanPhone || rawPhone) {
+                        phoneHtml = `
+                            <div class="flex flex-col gap-1">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="font-bold text-slate-800">${escapeHtml(rawPhone)}</span>
+                                    ${isMobile ? '<span class="px-1.5 py-0.2 text-[9px] bg-emerald-100 text-emerald-700 rounded font-bold">Di động</span>' : '<span class="px-1.5 py-0.2 text-[9px] bg-slate-100 text-slate-600 rounded">Cố định</span>'}
+                                </div>
+                                <div class="flex items-center gap-1 mt-0.5">
+                                    <button onclick="makeCallToPhone('${cleanPhone}')" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold flex items-center gap-1 shadow-sm" title="Bấm gọi qua V9 Voice SDK / PBX">
+                                        📞 Gọi V9
+                                    </button>
+                                    ${isMobile && zaloUrl ? `
+                                        <a href="${zaloUrl}" target="_blank" class="px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-bold flex items-center gap-1 shadow-sm" title="Mở chat Zalo với số này">
+                                            💬 Zalo
+                                        </a>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    let contactHtml = [];
+                    if (p.emails) {
+                        contactHtml.push(`<div class="flex items-center gap-1 text-sky-700 font-medium truncate max-w-[170px]" title="${escapeHtml(p.emails)}">✉ ${escapeHtml(p.emails)}</div>`);
+                    }
+                    if (p.website) {
+                        contactHtml.push(`<a href="${escapeHtml(p.website)}" target="_blank" class="text-indigo-600 hover:underline truncate max-w-[170px] block" title="${escapeHtml(p.website)}">🌐 ${escapeHtml(p.website.replace(/^https?:\\/\\//, ''))}</a>`);
+                    }
+                    if (contactHtml.length === 0) contactHtml.push('<span class="text-slate-300 italic">Chưa có liên hệ</span>');
+
+                    let scanBadge = '';
+                    if (p.scan_count > 1) {
+                        scanBadge = `<span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full font-bold text-[10px] inline-flex items-center gap-0.5" title="Địa điểm này đã xuất hiện trong ${p.scan_count} lần quét khác nhau và đã được tự động gộp trùng">🔄 Quét ${p.scan_count} lần</span>`;
+                    } else {
+                        scanBadge = `<span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[10px]">1 lần</span>`;
+                    }
+
+                    html += `
+                        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                            <td class="p-3 text-center text-slate-400 font-mono">${startIdx + idx + 1}</td>
+                            <td class="p-3">
+                                <div class="font-bold text-slate-900">${escapeHtml(p.title)}</div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-amber-500 font-bold">★ ${p.review_rating || 0}</span>
+                                    <span class="text-slate-400">(${p.review_count || 0} đánh giá)</span>
+                                    ${p.link ? `<a href="${escapeHtml(p.link)}" target="_blank" class="text-indigo-500 hover:underline text-[11px]" title="Xem trên Google Maps">📍 Xem Maps</a>` : ''}
+                                </div>
+                            </td>
+                            <td class="p-3">${phoneHtml}</td>
+                            <td class="p-3">${contactHtml.join('')}</td>
+                            <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[11px]">${escapeHtml(p.category || 'N/A')}</span></td>
+                            <td class="p-3 text-slate-600 max-w-[200px] truncate" title="${escapeHtml(p.address)}">${escapeHtml(p.address || '—')}</td>
+                            <td class="p-3 text-center">
+                                ${scanBadge}
+                                <div class="text-[10px] text-slate-400 mt-1">${escapeHtml(p.last_scanned_at || '')}</div>
+                            </td>
+                            <td class="p-3 text-center">
+                                <button onclick="deletePlaceFromDb(${p.id}, '${escapeHtml(p.title).replace(/'/g, "\\'")}')" class="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50 transition" title="Xóa địa điểm khỏi CSDL">
+                                    🗑
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = html;
+                renderDbPagination(data.total, data.page);
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-rose-500">Lỗi kết nối CSDL: ${e.message}</td></tr>`;
+            }
+        }
+
+        function renderDbPagination(total, page) {
+            const info = document.getElementById('db-pagination-info');
+            const controls = document.getElementById('db-pagination-controls');
+            info.textContent = `Trang ${page} / ${dbTotalPages || 1} (Tổng: ${total.toLocaleString()} địa điểm)`;
+
+            let btnHtml = '';
+            btnHtml += `<button onclick="loadDatabasePlaces(1)" ${page <= 1 ? 'disabled class="opacity-40 px-2 py-1 bg-white border border-slate-200 rounded text-xs"' : 'class="px-2 py-1 bg-white border border-slate-300 hover:bg-slate-50 rounded text-xs"'}>&laquo; Đầu</button>`;
+            btnHtml += `<button onclick="loadDatabasePlaces(${page - 1})" ${page <= 1 ? 'disabled class="opacity-40 px-2.5 py-1 bg-white border border-slate-200 rounded text-xs"' : 'class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 rounded text-xs"'}>&lsaquo; Trước</button>`;
+
+            let startP = Math.max(1, page - 2);
+            let endP = Math.min(dbTotalPages, startP + 4);
+            if (endP - startP < 4) startP = Math.max(1, endP - 4);
+
+            for (let i = startP; i <= endP; i++) {
+                if (i === page) {
+                    btnHtml += `<button class="px-2.5 py-1 bg-indigo-600 text-white font-bold rounded text-xs">${i}</button>`;
+                } else {
+                    btnHtml += `<button onclick="loadDatabasePlaces(${i})" class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 rounded text-xs">${i}</button>`;
+                }
+            }
+
+            btnHtml += `<button onclick="loadDatabasePlaces(${page + 1})" ${page >= dbTotalPages ? 'disabled class="opacity-40 px-2.5 py-1 bg-white border border-slate-200 rounded text-xs"' : 'class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 rounded text-xs"'}>Sau &rsaquo;</button>`;
+            btnHtml += `<button onclick="loadDatabasePlaces(${dbTotalPages})" ${page >= dbTotalPages ? 'disabled class="opacity-40 px-2 py-1 bg-white border border-slate-200 rounded text-xs"' : 'class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-50 rounded text-xs"'}>Cuối &raquo;</button>`;
+
+            controls.innerHTML = btnHtml;
+        }
+
+        function doSearchDatabase() {
+            loadDatabasePlaces(1);
+        }
+
+        function resetSearchDatabase() {
+            document.getElementById('db-search-input').value = '';
+            document.getElementById('db-filter-select').value = 'all';
+            loadDatabasePlaces(1);
+        }
+
+        async function syncAllScrapesToDB() {
+            if (!confirm("Hệ thống sẽ quét toàn bộ các file CSV đã cào trong thư mục outputs/ để nạp vào CSDL Master và tự động nhận diện / gộp tất cả dữ liệu trùng lặp.\\n\\nTiếp tục thực hiện?")) {
+                return;
+            }
+            const btn = document.getElementById('btn-sync-all');
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="animate-spin">⏳</i> Đang đồng bộ...`;
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(apiUrl('/api/database/sync-all'), { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    alert(`Đồng bộ thành công ${data.total_files} file cào!\\n\\n- Tổng số dòng quét: ${data.total_records}\\n- Địa điểm mới: ${data.total_new}\\n- Trùng lặp đã chặn & gộp: ${data.total_duplicates}`);
+                    loadDatabaseStats();
+                    loadDatabasePlaces(1);
+                } else {
+                    alert("Có lỗi khi đồng bộ: " + (data.error || ""));
+                }
+            } catch (e) {
+                alert("Lỗi kết nối máy chủ: " + e.message);
+            } finally {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+            }
+        }
+
+        async function deletePlaceFromDb(id, title) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa địa điểm "${title}" khỏi CSDL Master?`)) {
+                return;
+            }
+            try {
+                const res = await fetch(apiUrl(`/api/database/places/${id}`), { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    loadDatabaseStats();
+                    loadDatabasePlaces(dbCurrentPage);
+                } else {
+                    alert("Lỗi xóa: " + (data.error || ""));
+                }
+            } catch (e) {
+                alert("Lỗi kết nối: " + e.message);
+            }
+        }
+
+        function exportDatabaseFile(format) {
+            const filter = document.getElementById('db-filter-select').value;
+            window.location.href = apiUrl(`/api/database/export?filter=${encodeURIComponent(filter)}&format=${format}`);
         }
 
         function escapeHtml(str) {

@@ -47,6 +47,10 @@
                     <span id="v9-sip-text">Chưa kết nối SIP</span>
                 </div>
 
+                <button onclick="toggleV9BuiltinLauncher()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow" title="Mở bàn phím quay số V9 Voice SDK Softphone">
+                    <i data-lucide="phone-call" class="w-4 h-4"></i> Voice SDK Softphone
+                </button>
+
                 <button onclick="switchTab('tab-scrape')" id="btn-tab-scrape" class="px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-900 text-white shadow flex items-center gap-1.5">
                     <i data-lucide="crosshair" class="w-4 h-4"></i> Chọn vùng & Cào
                 </button>
@@ -228,6 +232,32 @@
 
         <!-- TAB 2: XEM KẾT QUẢ, GỌI ĐIỆN V9 TECH & NHẮN ZALO -->
         <div id="tab-view" class="hidden flex flex-col gap-6">
+            <!-- BANNER TÍCH HỢP V9 TECH VOICE SDK -->
+            <div id="v9-sdk-banner" class="bg-gradient-to-r from-indigo-950 via-indigo-900 to-emerald-900 text-white p-4 rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-4 border border-indigo-700/50">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-white/10 rounded-xl backdrop-blur">
+                        <i data-lucide="headphones" class="w-6 h-6 text-amber-300"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                                Tích hợp V9 Tech Voice SDK (WebRTC Softphone)
+                                <span class="text-[10px] bg-emerald-500 text-white font-extrabold px-2 py-0.5 rounded-full uppercase">v1.1.7 Official</span>
+                            </h3>
+                        </div>
+                        <p class="text-xs text-indigo-200 mt-0.5">Gọi điện trực tiếp từ trình duyệt qua Tai nghe & Mic máy tính (không cần Zoiper). Trạng thái: <span id="banner-sip-status" class="font-bold text-amber-300 underline">Đang kiểm tra...</span></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <button onclick="openV9Modal()" class="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-900 rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition">
+                        <i data-lucide="key" class="w-4 h-4"></i> Cấu hình Voice SDK
+                    </button>
+                    <button onclick="toggleV9BuiltinLauncher()" id="btn-banner-dialer" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition">
+                        <i data-lucide="phone-call" class="w-4 h-4"></i> Bàn phím Softphone
+                    </button>
+                </div>
+            </div>
+
             <!-- Thanh điều khiển kết quả -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center gap-2">
@@ -460,8 +490,8 @@
         </button>
     </div>
 
-    <!-- Container ẩn cho Audio WebRTC -->
-    <div id="sip-dialer-container" style="display:none;"></div>
+    <!-- Container chính thức cho V9 Tech Voice SDK Dialer UI -->
+    <div id="sip-dialer-container"></div>
 
     <script>
 
@@ -1009,8 +1039,9 @@
                 } else if (v9Config.mode === 'api' && v9Config.extension) {
                     updateSipBadge('registered', `PBX API [${v9Config.extension}]`);
                 } else {
-                    updateSipBadge('not_configured', 'Cấu hình V9 Tech');
+                    updateSipBadge('not_configured', 'Cấu hình Voice SDK V9');
                 }
+                updateBannerStatus();
             } catch (e) {
                 console.error("Lỗi lấy config V9:", e);
                 updateSipBadge('error', 'Lỗi kết nối V9');
@@ -1047,6 +1078,34 @@
                 : 'py-1.5 rounded-md text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5';
         }
 
+        let currentPendingCallPhone = null;
+
+        function updateBannerStatus() {
+            const b = document.getElementById('banner-sip-status');
+            if (!b) return;
+            if (v9Config.mode === 'sdk') {
+                if (v9Config.token) {
+                    b.textContent = `🟢 Sẵn sàng WebRTC Softphone [Máy nhánh: ${v9Config.sip_username || '101'}]`;
+                    b.className = 'font-bold text-emerald-300 underline';
+                } else {
+                    b.textContent = '⚠️ Chưa cấu hình Token Voice SDK - Bấm để nhập thông tin';
+                    b.className = 'font-bold text-amber-300 underline cursor-pointer';
+                }
+            } else {
+                b.textContent = `📞 Đang dùng chế độ PBX API [Máy nhánh: ${v9Config.extension || '101'}]`;
+                b.className = 'font-bold text-blue-300 underline';
+            }
+        }
+
+        function toggleV9BuiltinLauncher() {
+            const dialog = document.querySelector('#sip-dialer-container .call-dialog');
+            if (dialog) {
+                dialog.classList.toggle('open');
+            } else {
+                openV9Modal();
+            }
+        }
+
         function updateSipBadge(state, text) {
             const badge = document.getElementById('v9-sip-badge');
             const dot = document.getElementById('v9-sip-dot');
@@ -1066,12 +1125,19 @@
                 dot.className = 'w-2.5 h-2.5 rounded-full bg-slate-400';
                 badge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-900/80 hover:bg-indigo-900 text-xs font-medium cursor-pointer border border-indigo-600/50 shadow-inner text-slate-300';
             }
+            updateBannerStatus();
         }
 
         function connectV9WebRTC() {
             if (!window.VoiceSDKDialer) {
                 console.warn("VoiceSDKDialer chưa có trong window.");
                 updateSipBadge('not_configured', 'Cần nạp SDK V9');
+                return;
+            }
+
+            if (!v9Config.token || !v9Config.domain || !v9Config.client_id) {
+                console.log("Chưa có đủ thông tin token/domain/client_id cho VoiceSDKDialer");
+                updateSipBadge('not_configured', 'Cần nhập Token V9');
                 return;
             }
 
@@ -1091,70 +1157,80 @@
                 v9Dialer.start({
                     containerId: 'sip-dialer-container',
                     defaultCountryCode: '+84',
-                    enableUI: false,
-                    enableDialerLauncher: false,
+                    enableUI: true,                // Bật giao diện dialer có sẵn theo mục 7 tài liệu V9
+                    enableDialerLauncher: true,    // Bật nút nổi launcher góc màn hình theo mục 7 tài liệu V9
                     sipConfig: {
-                        server: v9Config.sip_server || v9Config.domain,
-                        port: parseInt(v9Config.sip_port) || 8089,
+                        server: v9Config.sip_server || v9Config.domain || 'v9cc.v9.com.vn',
+                        port: parseInt(v9Config.sip_port) || 443,
                         username: v9Config.sip_username || v9Config.extension || '101',
                         password: v9Config.sip_password || '',
-                        displayName: v9Config.sip_display_name || 'NV Kinh Doanh'
+                        displayName: v9Config.sip_display_name || v9Config.sip_username || '101'
                     },
                     callbacks: {
-                        onRegistered: function(data, dialer) {
-                            console.log('SIP Registered thành công:', data);
-                            updateSipBadge('registered', `Sẵn sàng [${v9Config.sip_username || '101'}]`);
+                        onReady: function(sdk) {
+                            console.log('Voice SDK onReady:', sdk);
+                            updateSipBadge('connecting', 'Voice SDK Ready');
                         },
-                        onUnregistered: function(data, dialer) {
-                            console.log('SIP Unregistered:', data);
+                        onConnected: function() {
+                            console.log('Voice SDK onConnected');
+                            updateSipBadge('connecting', 'SIP Connected');
+                        },
+                        onRegistered: function(data, dialer) {
+                            console.log('Voice SDK onRegistered thành công:', data);
+                            updateSipBadge('registered', `Sẵn sàng [${v9Config.sip_username || '101'}]`);
+                            showToast('V9 Voice SDK', `Đã kết nối Softphone máy nhánh ${v9Config.sip_username || '101'}`);
+                            if (currentPendingCallPhone) {
+                                const p = currentPendingCallPhone;
+                                currentPendingCallPhone = null;
+                                makeCallToPhone(p);
+                            }
+                        },
+                        onUnregistered: function() {
+                            console.log('Voice SDK onUnregistered');
                             updateSipBadge('unregistered', 'Chưa đăng ký SIP');
                         },
-                        onServerConnect: function(data, dialer) {
-                            console.log('SIP Server Connect:', data);
-                            updateSipBadge('connecting', 'Đã nối máy chủ SIP');
-                        },
-                        onServerDisconnect: function(data, dialer) {
-                            console.log('SIP Server Disconnect:', data);
+                        onDisconnected: function() {
+                            console.log('Voice SDK onDisconnected');
                             updateSipBadge('disconnected', 'Mất kết nối SIP');
                         },
-                        onOutgoingCall: function(data, dialer) {
-                            console.log('Outgoing call:', data);
-                            openCallWidget(currentActivePhone || 'Đang gọi...', 'Đang đổ chuông...');
-                            updateSipBadge('in_call', `Đang gọi ${currentActivePhone}`);
+                        onIncomingCall: function(call) {
+                            console.log('Voice SDK onIncomingCall:', call);
+                            showToast('Cuộc gọi đến', `Từ số: ${call.call_phone_number || call.call_extension}`);
                         },
-                        onCallAnswered: function(data, dialer) {
-                            console.log('Call Answered:', data);
-                            updateCallWidgetStatus('Đang đàm thoại (WebRTC)');
-                            startCallTimer();
-                            updateSipBadge('in_call', `Đàm thoại: ${currentActivePhone}`);
+                        onOutgoingCall: function(call) {
+                            console.log('Voice SDK onOutgoingCall:', call);
+                            updateSipBadge('in_call', `Đang gọi ${call.call_phone_number || currentActivePhone}`);
                         },
-                        onCallEnded: function(data, dialer) {
-                            console.log('Call Ended:', data);
-                            updateCallWidgetStatus('Cuộc gọi đã kết thúc');
-                            stopCallTimer();
+                        onCallInitiated: function(data) {
+                            console.log('Voice SDK onCallInitiated:', data);
+                        },
+                        onCallAnswered: function(call) {
+                            console.log('Voice SDK onCallAnswered:', call);
+                            updateSipBadge('in_call', `Đàm thoại: ${call.call_phone_number || currentActivePhone}`);
+                        },
+                        onCallEnded: function(call) {
+                            console.log('Voice SDK onCallEnded:', call);
                             updateSipBadge('registered', `Sẵn sàng [${v9Config.sip_username || '101'}]`);
-                            setTimeout(() => closeCallWidget(), 2500);
+                            showToast('Kết thúc', `Cuộc gọi kết thúc. Thời lượng: ${call.call_duration || 0}s`);
                         },
-                        onCallDeclined: function(data, dialer) {
-                            console.log('Call Declined:', data);
-                            updateCallWidgetStatus('Khách hàng từ chối cuộc gọi');
-                            stopCallTimer();
+                        onCallDeclined: function() {
+                            console.log('Voice SDK onCallDeclined');
                             updateSipBadge('registered', `Sẵn sàng [${v9Config.sip_username || '101'}]`);
-                            setTimeout(() => closeCallWidget(), 3000);
                         },
-                        onCallRejected: function(data, dialer) {
-                            console.log('Call Rejected:', data);
-                            updateCallWidgetStatus('Máy bận / Từ chối');
-                            stopCallTimer();
+                        onCallRejected: function(data) {
+                            console.log('Voice SDK onCallRejected:', data);
                             updateSipBadge('registered', `Sẵn sàng [${v9Config.sip_username || '101'}]`);
-                            setTimeout(() => closeCallWidget(), 3000);
+                            showToast('Bận', 'Máy bận hoặc từ chối cuộc gọi');
                         },
-                        onStatusChange: function(status, dialer) {
-                            console.log('SIP Status Change:', status);
+                        onStateChange: function(state) {
+                            console.log('Voice SDK onStateChange:', state);
+                        },
+                        onStatusChange: function(status) {
+                            console.log('Voice SDK onStatusChange:', status);
                         },
                         onError: function(err) {
-                            console.error('SIP Error:', err);
-                            showToast('Lỗi V9 Softphone', err || 'Lỗi kết nối');
+                            console.error('Voice SDK onError:', err);
+                            showToast('Lỗi V9 Voice SDK', typeof err === 'string' ? err : JSON.stringify(err));
                         }
                     }
                 });
@@ -1173,20 +1249,30 @@
 
             currentActivePhone = clean;
 
-            if (v9Config.mode === 'sdk' && v9Config.token) {
-                if (!v9Dialer) {
-                    connectV9WebRTC();
-                }
-                openCallWidget(clean, 'Đang thiết lập cuộc gọi...');
-                try {
-                    v9Dialer.makeCall(clean);
-                } catch (err) {
-                    console.error("Make call error:", err);
-                    showToast('Lỗi gọi WebRTC', err.message || err);
+            if (v9Config.mode === 'sdk') {
+                if (v9Dialer && v9Config.token) {
+                    const dialog = document.querySelector('#sip-dialer-container .call-dialog');
+                    if (dialog && !dialog.classList.contains('open')) {
+                        dialog.classList.add('open');
+                    }
+                    showToast('Đang gọi', `Đang gọi ${clean} qua V9 Voice SDK...`);
+                    try {
+                        v9Dialer.makeCall(clean, {
+                            'X-Call-Reason': 'GoogleMaps-Scraper'
+                        });
+                    } catch (err) {
+                        console.error("Make call error:", err);
+                        showToast('Lỗi gọi', err.message || err);
+                    }
+                } else {
+                    currentPendingCallPhone = clean;
+                    openV9Modal();
+                    alert(`Vui lòng nhập Token & thông tin tài khoản V9 Voice SDK để thực hiện cuộc gọi tới ${clean}!`);
                 }
             } else if (v9Config.mode === 'api' || v9Config.extension) {
                 callViaPbxApi(clean);
             } else {
+                currentPendingCallPhone = clean;
                 openV9Modal();
             }
         }

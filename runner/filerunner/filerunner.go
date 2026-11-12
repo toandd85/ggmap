@@ -278,6 +278,12 @@ func (r *fileRunner) setWriters() error {
 					return headerErr
 				}
 
+				if writeHeader && r.outfile != nil {
+					if fi, err := r.outfile.Stat(); err == nil && fi.Size() == 0 {
+						_, _ = r.outfile.Write([]byte{0xEF, 0xBB, 0xBF})
+					}
+				}
+
 				r.writers = append(r.writers, resume.NewCSVAppendWriter(
 					csv.NewWriter(resultsWriter),
 					writeHeader,
@@ -289,6 +295,11 @@ func (r *fileRunner) setWriters() error {
 		case r.cfg.JSON:
 			r.writers = append(r.writers, jsonwriter.NewJSONWriter(resultsWriter))
 		default:
+			if r.outfile != nil {
+				if fi, err := r.outfile.Stat(); err == nil && fi.Size() == 0 {
+					_, _ = r.outfile.Write([]byte{0xEF, 0xBB, 0xBF})
+				}
+			}
 			csvWriter := csvwriter.NewCsvWriter(csv.NewWriter(resultsWriter))
 			r.writers = append(r.writers, csvWriter)
 		}

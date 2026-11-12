@@ -250,7 +250,8 @@ func loadCSVIdentities(r io.Reader, ids *IdentitySet) error {
 
 	indexes := map[string]int{}
 	for i, header := range headers {
-		indexes[strings.TrimSpace(header)] = i
+		cleanHeader := strings.TrimSpace(strings.TrimPrefix(header, "\ufeff"))
+		indexes[cleanHeader] = i
 	}
 
 	for {

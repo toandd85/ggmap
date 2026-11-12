@@ -15,7 +15,13 @@
     <script src="static/v9_softphone_sdk.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
-        #picker-map, #results-map { height: 460px; border-radius: 0.75rem; }
+        #picker-map, #results-map { 
+            height: 460px; 
+            border-radius: 0.75rem; 
+            position: relative; 
+            z-index: 1 !important; 
+            isolation: isolate; 
+        }
         .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
         .zalo-badge { background-color: #0068FF; color: white; }
@@ -511,7 +517,7 @@
     </main>
 
     <!-- FLOATING WEBRTC SOFTPHONE CALL WIDGET (Góc dưới bên phải) -->
-    <div id="v9-call-widget" class="fixed bottom-5 right-5 z-50 bg-white rounded-2xl shadow-2xl border border-slate-200 w-80 p-5 hidden flex-col transition-all">
+    <div id="v9-call-widget" class="fixed bottom-5 right-5 z-[9990] bg-white rounded-2xl shadow-2xl border border-slate-200 w-80 p-5 hidden flex-col transition-all" style="z-index: 9990;">
         <div class="flex items-center justify-between pb-3 border-b border-slate-100">
             <div class="flex items-center gap-2">
                 <span class="relative flex h-3 w-3">
@@ -546,7 +552,7 @@
     </div>
 
     <!-- MODAL CẤU HÌNH TỔNG ĐÀI V9 TECH -->
-    <div id="v9-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+    <div id="v9-modal" class="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 hidden" style="z-index: 99999;">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 border border-slate-200">
             <div class="flex items-center justify-between pb-3 border-b border-slate-200">
                 <div class="flex items-center gap-2">
@@ -635,7 +641,7 @@
     </div>
 
     <!-- TOAST THÔNG BÁO CUỘC GỌI V9 TECH -->
-    <div id="v9-toast" class="fixed bottom-5 left-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 hidden border border-slate-700 max-w-sm">
+    <div id="v9-toast" class="fixed bottom-5 left-5 z-[99999] bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 hidden border border-slate-700 max-w-sm" style="z-index: 99999;">
         <div class="p-2 bg-emerald-600 rounded-lg">
             <i data-lucide="phone-outgoing" class="w-5 h-5"></i>
         </div>

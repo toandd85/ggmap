@@ -327,7 +327,7 @@ def start_scrape(data: dict):
             f.write(q + "\n")
 
     cmd = [
-        str(WORKSPACE_DIR / "google-maps-scraper.exe"),
+        str(SCRAPER_BIN),
         "-input", str(query_file_path),
         "-results", str(raw_csv_path),
         "-lang", "vi",

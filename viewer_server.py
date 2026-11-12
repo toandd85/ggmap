@@ -7,6 +7,7 @@ import datetime
 import subprocess
 import threading
 import pandas as pd
+import sys
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, BackgroundTasks, Query
@@ -15,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import httpx
 
-app = FastAPI(title="Google Maps Scraper - Viet UI Pro")
+app = FastAPI(title="Google Maps Scraper - Viet UI Pro", root_path="/ggmdata" if os.environ.get("USE_ROOT_PATH") == "1" else "")
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,7 +26,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-WORKSPACE_DIR = Path("d:/ggmap").resolve()
+WORKSPACE_DIR = Path(os.environ.get("WORKSPACE_DIR", Path(__file__).parent.resolve())).resolve()
+SCRAPER_BIN = WORKSPACE_DIR / ("google-maps-scraper.exe" if sys.platform == "win32" else "google-maps-scraper")
 RESULTS_DIR = WORKSPACE_DIR / "outputs"
 CONFIG_FILE = WORKSPACE_DIR / "v9tech_config.json"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -275,7 +277,7 @@ def start_scrape(data: dict):
             f.write(q + "\n")
 
     cmd = [
-        str(WORKSPACE_DIR / "google-maps-scraper.exe"),
+        str(SCRAPER_BIN),
         "-input", str(query_file_path),
         "-results", str(raw_csv_path),
         "-lang", "vi",
@@ -740,6 +742,11 @@ def index_html():
     </div>
 
     <script>
+        const API_BASE = window.location.pathname.replace(/\/+$/, '');
+        function apiUrl(path) {
+            if (!path.startsWith('/')) path = '/' + path;
+            return API_BASE ? (API_BASE + path) : path;
+        }
         let pickerMap, resultsMap;
         let pickerMarker = null;
         let pickerCircle = null;
@@ -1035,7 +1042,7 @@ def index_html():
             document.getElementById('log-status').textContent = "Đang chạy...";
 
             try {
-                const res = await fetch('/api/start-scrape', {
+                const res = await fetch(apiUrl('/api/start-scrape'), {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ 
@@ -1071,7 +1078,7 @@ def index_html():
 
         async function checkScrapeStatus() {
             try {
-                const res = await fetch('/api/status');
+                const res = await fetch(apiUrl('/api/status'));
                 const data = await res.json();
                 
                 const logBox = document.getElementById('scrape-logs');
@@ -1116,7 +1123,7 @@ def index_html():
         async function refreshFileList() {
             const select = document.getElementById('file-select');
             try {
-                const res = await fetch('/api/files');
+                const res = await fetch(apiUrl('/api/files'));
                 const files = await res.json();
                 select.innerHTML = '';
                 if (files.length === 0) {
@@ -1141,7 +1148,7 @@ def index_html():
             if (!filename) return;
 
             try {
-                const res = await fetch(`/api/data?filename=${encodeURIComponent(filename)}`);
+                const res = await fetch(apiUrl(`/api/data?filename=${encodeURIComponent(filename)}`));
                 const json = await res.json();
                 allPlacesData = json.data || [];
                 filteredPlacesData = [...allPlacesData];
@@ -1302,7 +1309,7 @@ def index_html():
             msgEl.textContent = `Đang kích hoạt tổng đài V9 Tech tới ${name || 'khách hàng'}...`;
 
             try {
-                const res = await fetch('/api/v9tech/call', {
+                const res = await fetch(apiUrl('/api/v9tech/call'), {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ phone })
@@ -1334,7 +1341,7 @@ def index_html():
         // Cấu hình V9 Tech
         async function openV9Modal() {
             try {
-                const res = await fetch('/api/v9tech/config');
+                const res = await fetch(apiUrl('/api/v9tech/config'));
                 const cfg = await res.json();
                 document.getElementById('v9-cfg-ext').value = cfg.extension || '101';
                 document.getElementById('v9-cfg-url').value = cfg.api_url || 'https://api.v9tech.vn/api/v1/call/click-to-call';
@@ -1358,7 +1365,7 @@ def index_html():
             }
 
             try {
-                await fetch('/api/v9tech/config', {
+                await fetch(apiUrl('/api/v9tech/config'), {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ extension: ext, api_url: url, api_key: key })
@@ -1376,7 +1383,7 @@ def index_html():
                 alert("Vui lòng chọn một tệp!");
                 return;
             }
-            window.location.href = `/api/download?filename=${encodeURIComponent(filename)}&format=${format}`;
+            window.location.href = apiUrl(`/api/download?filename=${encodeURIComponent(filename)}&format=${format}`);
         }
 
         function escapeHtml(str) {

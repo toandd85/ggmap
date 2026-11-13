@@ -745,6 +745,21 @@ def get_vietnam_admin_data():
             vietnam_admin_cache = {"provinces": [], "districts": {}, "wards": {}}
     return vietnam_admin_cache or {"provinces": [], "districts": {}, "wards": {}}
 
+def find_province(provinces, province_input: str):
+    p_in = province_input.strip().lower()
+    for p in provinces:
+        p_name = p.get("name", "").strip().lower()
+        p_code = p.get("code")
+        if p_code == province_input or p_name == p_in:
+            return p
+        if p_in in ("tp. hồ chí minh", "hồ chí minh", "tp hồ chí minh", "tphcm", "hcm"):
+            if p_code == "79":
+                return p
+        if p_in in ("hà nội", "ha noi", "hn"):
+            if p_code == "01":
+                return p
+    return None
+
 @app.get("/api/administrative/provinces")
 async def get_provinces():
     data = get_vietnam_admin_data()
@@ -754,15 +769,35 @@ async def get_provinces():
 async def get_districts(province: str = Query(...)):
     data = get_vietnam_admin_data()
     provinces = data.get("provinces", [])
-    p_code = None
-    for p in provinces:
-        if p.get("code") == province or p.get("name", "").strip().lower() == province.strip().lower():
-            p_code = p.get("code")
-            break
-    if not p_code:
+    p = find_province(provinces, province)
+    if not p:
         return {"success": False, "districts": [], "error": f"Không tìm thấy tỉnh/thành phố: {province}"}
+    p_code = p.get("code")
     districts = data.get("districts", {}).get(p_code, [])
-    return {"success": True, "province_code": p_code, "districts": districts}
+
+    counts = {}
+    for d in districts:
+        t = d.get("type", "other")
+        counts[t] = counts.get(t, 0) + 1
+
+    breakdown_parts = []
+    if counts.get("quan"): breakdown_parts.append(f"{counts['quan']} Quận")
+    if counts.get("huyen"): breakdown_parts.append(f"{counts['huyen']} Huyện")
+    if counts.get("thi-xa"): breakdown_parts.append(f"{counts['thi-xa']} Thị xã")
+    if counts.get("thanh-pho"): breakdown_parts.append(f"{counts['thanh-pho']} Thành phố")
+
+    breakdown_str = ", ".join(breakdown_parts) if breakdown_parts else f"{len(districts)} đơn vị"
+    total_wards = sum(len(data.get("wards", {}).get(d.get("code"), [])) for d in districts)
+
+    return {
+        "success": True,
+        "province_code": p_code,
+        "province_name": p.get("name"),
+        "districts": districts,
+        "total_districts": len(districts),
+        "total_wards": total_wards,
+        "breakdown": breakdown_str
+    }
 
 @app.get("/api/administrative/wards")
 async def get_wards(district: str = Query(...), province: Optional[str] = Query(None)):

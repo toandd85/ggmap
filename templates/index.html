@@ -230,23 +230,37 @@
 
                         <!-- Tùy chọn chi tiết khi chọn: Toàn Tỉnh / Thành phố -->
                         <div id="scope-province-options" class="pt-2 border-t border-indigo-200/60 flex flex-col gap-2 text-xs">
-                            <label class="flex items-start gap-2 p-1.5 hover:bg-white/60 rounded cursor-pointer">
-                                <input type="radio" name="province-detail-mode" value="overview" checked class="mt-0.5 text-indigo-600">
-                                <span class="text-slate-700">
-                                    <b>Quét tìm kiếm tổng quan:</b> <code>[Từ khóa] tại [Tên Tỉnh/TP]</code> <span class="text-slate-400">(Nhanh, quét tổng quan diện rộng)</span>
-                                </span>
+                            <label class="flex items-start gap-2.5 p-2.5 bg-emerald-50/80 border border-emerald-300/80 rounded-xl cursor-pointer hover:bg-emerald-100/60 transition shadow-2xs">
+                                <input type="radio" name="province-detail-mode" value="all_districts" checked class="mt-0.5 text-indigo-600">
+                                <div>
+                                    <div class="font-bold text-emerald-950 flex items-center gap-1.5">
+                                        <span>Quét phủ toàn bộ Quận / Huyện</span>
+                                        <span class="bg-emerald-600 text-white text-[10px] px-1.5 py-0.5 rounded font-extrabold uppercase">Khuyên dùng • Ra nhiều data nhất</span>
+                                    </div>
+                                    <div class="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
+                                        Tự động quét lần lượt từng Quận/Huyện của tỉnh. Gom về tối đa từ <b>500 đến hơn 2.000 khách hàng</b> sạch, không sót địa bàn nào.
+                                    </div>
+                                </div>
                             </label>
-                            <label class="flex items-start gap-2 p-1.5 hover:bg-white/60 rounded cursor-pointer">
-                                <input type="radio" name="province-detail-mode" value="all_districts" class="mt-0.5 text-indigo-600">
-                                <span class="text-slate-700">
-                                    <b>Quét phủ toàn bộ Quận / Huyện:</b> Tự động quét lần lượt từng Quận/Huyện của tỉnh
-                                </span>
-                            </label>
-                            <label class="flex items-start gap-2 p-1.5 hover:bg-white/60 rounded cursor-pointer">
+
+                            <label class="flex items-start gap-2.5 p-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition shadow-2xs">
                                 <input type="radio" name="province-detail-mode" value="all_wards" class="mt-0.5 text-indigo-600">
-                                <span class="text-slate-700">
-                                    <b>Quét phủ toàn bộ Xã / Phường:</b> Tự động quét quét sâu vào tất cả các Xã/Phường của cả tỉnh
-                                </span>
+                                <div>
+                                    <div class="font-bold text-slate-800">Quét phủ toàn bộ Xã / Phường của cả tỉnh</div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                                        Tự động quét quét sâu vào tất cả hàng trăm Xã/Phường của cả tỉnh (Quét triệt để nhất).
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start gap-2.5 p-2 bg-white/70 border border-slate-200 rounded-lg cursor-pointer hover:bg-white transition">
+                                <input type="radio" name="province-detail-mode" value="overview" class="mt-0.5 text-indigo-600">
+                                <div>
+                                    <div class="font-semibold text-slate-700">Quét 1 truy vấn tổng quan: <code>[Từ khóa] tại [Tên Tỉnh/TP]</code></div>
+                                    <div class="text-[11px] text-amber-700 mt-0.5">
+                                        ⚠️ Lưu ý: Google Maps chỉ trả tối đa ~60-90 kết quả cho 1 truy vấn diện rộng toàn thành phố.
+                                    </div>
+                                </div>
                             </label>
                         </div>
                     </div>
@@ -331,6 +345,22 @@
                         <span id="scrape-status-tag" class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800">Đang chạy</span>
                     </div>
                     <div id="scrape-logs" class="bg-slate-900 text-emerald-400 p-2.5 rounded-lg text-[11px] font-mono h-32 overflow-y-auto custom-scroll leading-relaxed whitespace-pre-wrap"></div>
+
+                    <!-- Nút bấm chuyển nhanh tab xem dữ liệu khi hoàn tất -->
+                    <div id="scrape-complete-actions" class="hidden flex flex-col gap-2 pt-2.5 border-t border-slate-200">
+                        <div class="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+                            Quét hoàn tất! Bấm để xem dữ liệu ngay:
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" onclick="switchTab('tab-database')" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow flex items-center justify-center gap-1.5 transition">
+                                <i data-lucide="database" class="w-3.5 h-3.5 text-emerald-200"></i> Vào Kho CSDL Master
+                            </button>
+                            <button type="button" onclick="switchTab('tab-view')" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow flex items-center justify-center gap-1.5 transition">
+                                <i data-lucide="table" class="w-3.5 h-3.5 text-amber-300"></i> Xem Bảng & Bản đồ
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -860,6 +890,34 @@
     </div><!-- end #app-root -->
 
     <script>
+        // TAB SWITCHING FUNCTION
+        window.switchTab = function(tabId) {
+            const tabs = ['tab-scrape', 'tab-view', 'tab-database'];
+            tabs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('hidden', id !== tabId);
+                const btn = document.getElementById('btn-' + id);
+                if (btn) {
+                    if (id === tabId) {
+                        btn.className = 'px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-950 text-white shadow-lg ring-2 ring-indigo-400 flex items-center gap-1.5 transition';
+                    } else {
+                        btn.className = 'px-3.5 py-2 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 shadow transition';
+                    }
+                }
+            });
+
+            if (tabId === 'tab-view') {
+                refreshFileList();
+                if (window.resultsMap) setTimeout(() => window.resultsMap.invalidateSize(), 200);
+            } else if (tabId === 'tab-database') {
+                loadDatabaseStats();
+                loadDatabasePlaces(1);
+            } else if (tabId === 'tab-scrape') {
+                if (window.pickerMap) setTimeout(() => window.pickerMap.invalidateSize(), 200);
+            }
+            if (window.lucide) lucide.createIcons();
+        };
+
         // AUTH STATE & FETCH INTERCEPTOR
         window._authToken = '';
         window._currentUser = null;
@@ -1086,6 +1144,8 @@
                     if (data.success && Array.isArray(data.districts)) {
                         districts = data.districts;
                         adminCache.districts[provinceName] = districts;
+                        adminCache.districtDetails = adminCache.districtDetails || {};
+                        adminCache.districtDetails[provinceName] = data;
                     }
                 } catch(e) {
                     console.error('Lỗi tải quận huyện:', e);
@@ -1093,8 +1153,11 @@
             }
 
             districts = districts || [];
+            const details = (adminCache.districtDetails && adminCache.districtDetails[provinceName]) || {};
             if (statBadge) {
-                statBadge.textContent = `${districts.length} Quận / Huyện`;
+                const breakdown = details.breakdown || `${districts.length} Quận / Huyện`;
+                const totalWards = details.total_wards || 0;
+                statBadge.innerHTML = `<b>${breakdown}</b>${totalWards ? ` • <span class="text-indigo-600 font-bold">${totalWards} Xã/Phường</span>` : ''}`;
             }
 
             // Populate district select
@@ -1353,10 +1416,13 @@
                         btn.disabled = false;
                         btn.classList.remove('opacity-50', 'cursor-not-allowed');
                         
-                        // Tự động chuyển qua tab xem dữ liệu
+                        const compActions = document.getElementById('scrape-complete-actions');
+                        if (compActions) compActions.classList.remove('hidden');
+                        if (window.lucide) lucide.createIcons();
+
+                        // Tự động chuyển qua tab Kho CSDL Master
                         setTimeout(() => {
-                            switchTab('tab-view');
-                            refreshFileList();
+                            switchTab('tab-database');
                         }, 1200);
                     } else if (status.status === 'error') {
                         statusTag.className = 'px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800';

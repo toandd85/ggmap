@@ -143,11 +143,12 @@ def is_request_authorized(request: Request) -> bool:
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
     path = request.url.path
-    # Allow public endpoints (HTML view, static assets, auth endpoints)
+    # Allow public endpoints (HTML view, static assets, auth endpoints, administrative data)
     if (
         path in ("/", "/ggmdata", "/ggmdata/")
         or "/static/" in path
         or "/api/auth/" in path
+        or "/api/administrative/" in path
         or path.endswith(".ico")
     ):
         return await call_next(request)
@@ -723,6 +724,105 @@ def delete_database_place(place_id: int):
         return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
 
 # Giao diện HTML Tiếng Việt Chuyên Nghiệp
+
+# -------------------------------------------------------------
+# ADMINISTRATIVE DATA OF VIETNAM (63 PROVINCES, 705 DISTRICTS, 10,599 WARDS)
+# -------------------------------------------------------------
+ADMIN_DATA_FILE = WORKSPACE_DIR / "data" / "vietnam_admin_compact.json"
+if not ADMIN_DATA_FILE.exists():
+    ADMIN_DATA_FILE = WORKSPACE_DIR / "static" / "vietnam_admin_compact.json"
+
+vietnam_admin_cache = None
+
+def get_vietnam_admin_data():
+    global vietnam_admin_cache
+    if vietnam_admin_cache is None and ADMIN_DATA_FILE.exists():
+        try:
+            with open(ADMIN_DATA_FILE, "r", encoding="utf-8") as f:
+                vietnam_admin_cache = json.load(f)
+        except Exception as e:
+            print(f"Error loading admin data: {e}")
+            vietnam_admin_cache = {"provinces": [], "districts": {}, "wards": {}}
+    return vietnam_admin_cache or {"provinces": [], "districts": {}, "wards": {}}
+
+@app.get("/api/administrative/provinces")
+async def get_provinces():
+    data = get_vietnam_admin_data()
+    return {"success": True, "provinces": data.get("provinces", [])}
+
+@app.get("/api/administrative/districts")
+async def get_districts(province: str = Query(...)):
+    data = get_vietnam_admin_data()
+    provinces = data.get("provinces", [])
+    p_code = None
+    for p in provinces:
+        if p.get("code") == province or p.get("name", "").strip().lower() == province.strip().lower():
+            p_code = p.get("code")
+            break
+    if not p_code:
+        return {"success": False, "districts": [], "error": f"Không tìm thấy tỉnh/thành phố: {province}"}
+    districts = data.get("districts", {}).get(p_code, [])
+    return {"success": True, "province_code": p_code, "districts": districts}
+
+@app.get("/api/administrative/wards")
+async def get_wards(district: str = Query(...), province: Optional[str] = Query(None)):
+    data = get_vietnam_admin_data()
+    d_code = None
+    if district in data.get("wards", {}):
+        d_code = district
+    else:
+        p_code = None
+        if province:
+            for p in data.get("provinces", []):
+                if p.get("code") == province or p.get("name", "").strip().lower() == province.strip().lower():
+                    p_code = p.get("code")
+                    break
+        for p_c, d_list in data.get("districts", {}).items():
+            if p_code and p_c != p_code:
+                continue
+            for d in d_list:
+                d_name = d.get("name", "").strip().lower()
+                d_full = d.get("name_with_type", "").strip().lower()
+                dist_input = district.strip().lower()
+                if d.get("code") == district or d_name == dist_input or d_full == dist_input:
+                    d_code = d.get("code")
+                    break
+            if d_code:
+                break
+    if not d_code:
+        return {"success": False, "wards": [], "error": f"Không tìm thấy quận/huyện: {district}"}
+    wards = data.get("wards", {}).get(d_code, [])
+    return {"success": True, "district_code": d_code, "wards": wards}
+
+@app.get("/api/administrative/all-wards")
+async def get_all_wards_for_province(province: str = Query(...)):
+    data = get_vietnam_admin_data()
+    p_code = None
+    p_name = None
+    for p in data.get("provinces", []):
+        if p.get("code") == province or p.get("name", "").strip().lower() == province.strip().lower():
+            p_code = p.get("code")
+            p_name = p.get("name")
+            break
+    if not p_code:
+        return {"success": False, "wards": [], "error": f"Không tìm thấy tỉnh/thành phố: {province}"}
+    districts = data.get("districts", {}).get(p_code, [])
+    all_wards = []
+    for d in districts:
+        w_list = data.get("wards", {}).get(d.get("code"), [])
+        d_name = d.get("name_with_type", d.get("name"))
+        for w in w_list:
+            w_name = w.get("name_with_type", w.get("name"))
+            all_wards.append({
+                "code": w.get("code"),
+                "name": w.get("name"),
+                "name_with_type": w_name,
+                "district_name": d_name,
+                "province_name": p_name,
+                "full_address": f"{w_name}, {d_name}, {p_name}"
+            })
+    return {"success": True, "province": p_name, "total": len(all_wards), "wards": all_wards}
+
 @app.get("/", response_class=HTMLResponse)
 def index_html():
     if INDEX_HTML_PATH.exists():
